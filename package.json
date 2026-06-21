@@ -1,0 +1,23 @@
+{
+  "name": "vocabloom",
+  "version": "0.0.1",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n api,web -c cyan,magenta \"npm run start:dev --workspace=api\" \"npm run dev --workspace=web\"",
+    "dev:api": "npm run start:dev --workspace=api",
+    "dev:web": "npm run dev --workspace=web",
+    "build": "npm run build --workspaces --if-present",
+    "db:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:down": "docker compose -f docker-compose.dev.yml down",
+    "db:migrate": "npm run prisma:migrate:dev --workspace=api",
+    "db:seed": "npm run prisma:seed --workspace=api",
+    "db:studio": "npm run prisma:studio --workspace=api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

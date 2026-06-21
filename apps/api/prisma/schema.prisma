@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Vocabulary {
+  id                  String            @id @default(uuid()) @db.Uuid
+  englishExpression   String            @map("english_expression") @db.VarChar(500)
+  japaneseTranslation String            @map("japanese_translation") @db.VarChar(500)
+  notes               String?           @db.Text
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+
+  learningRecord   LearningRecord?
+  quizSessionItems QuizSessionItem[]
+
+  // Case-insensitive uniqueness is enforced via a raw migration index:
+  // CREATE UNIQUE INDEX vocabularies_english_ci_uq ON vocabularies (lower(english_expression));
+  @@index([createdAt])
+  @@map("vocabularies")
+}
+
+model LearningRecord {
+  id           String     @id @default(uuid()) @db.Uuid
+  vocabularyId String     @unique @map("vocabulary_id") @db.Uuid
+  vocabulary   Vocabulary @relation(fields: [vocabularyId], references: [id], onDelete: Cascade)
+
+  correctCount   Int   @default(0) @map("correct_count")
+  incorrectCount Int   @default(0) @map("incorrect_count")
+  streak         Int   @default(0)
+  priorityScore  Float @default(100) @map("priority_score")
+
+  lastAnsweredAt DateTime? @map("last_answered_at")
+  lastCorrectAt  DateTime? @map("last_correct_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([priorityScore(sort: Desc)])
+  @@map("learning_records")
+}
+
+model QuizSession {
+  id             String            @id @default(uuid()) @db.Uuid
+  questionCount  Int               @map("question_count")
+  windowSize     Int               @default(5) @map("window_size")
+  correctCount   Int               @default(0) @map("correct_count")
+  incorrectCount Int               @default(0) @map("incorrect_count")
+  status         QuizSessionStatus @default(IN_PROGRESS)
+  startedAt      DateTime          @default(now()) @map("started_at")
+  completedAt    DateTime?         @map("completed_at")
+
+  items QuizSessionItem[]
+
+  @@index([startedAt(sort: Desc)])
+  @@map("quiz_sessions")
+}
+
+enum QuizSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+model QuizSessionItem {
+  id           String         @id @default(uuid()) @db.Uuid
+  sessionId    String         @map("session_id") @db.Uuid
+  session      QuizSession    @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  vocabularyId String         @map("vocabulary_id") @db.Uuid
+  vocabulary   Vocabulary     @relation(fields: [vocabularyId], references: [id])
+
+  position     Int            // 0-indexed order in session queue
+  status       QuizItemStatus @default(PENDING)
+  displayedAt  DateTime?      @map("displayed_at")
+
+  attemptCount Int       @default(0) @map("attempt_count")
+  isCorrect    Boolean?  @map("is_correct")
+  answeredAt   DateTime? @map("answered_at")
+
+  @@unique([sessionId, vocabularyId])
+  @@unique([sessionId, position])
+  @@map("quiz_session_items")
+}
+
+enum QuizItemStatus {
+  PENDING
+  ACTIVE
+  CORRECT
+}
