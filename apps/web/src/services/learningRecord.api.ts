@@ -12,4 +12,9 @@ export const learningRecordApi = {
 
   getStats: () =>
     api.get<ApiResponse<Stats>>('/learning-records/stats').then((r) => r.data),
+
+  getCalendar: () =>
+    api
+      .get<ApiResponse<Array<{ date: string; count: number }>>>('/learning-records/calendar')
+      .then((r) => r.data),
 };

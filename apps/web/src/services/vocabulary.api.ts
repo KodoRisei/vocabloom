@@ -1,8 +1,10 @@
 import api from './api';
 import type { Vocabulary, PaginatedResponse, ApiResponse } from '../types';
 
+export type VocabSortBy = 'createdAt' | 'priorityScore' | 'streak';
+
 export const vocabularyApi = {
-  list: (params?: { page?: number; limit?: number; search?: string }) =>
+  list: (params?: { page?: number; limit?: number; search?: string; sortBy?: VocabSortBy }) =>
     api.get<PaginatedResponse<Vocabulary>>('/vocabularies', { params }).then((r) => r.data),
 
   get: (id: string) =>

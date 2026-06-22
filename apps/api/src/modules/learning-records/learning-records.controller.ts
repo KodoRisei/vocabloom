@@ -10,6 +10,11 @@ export class LearningRecordsController {
     return this.service.findAll();
   }
 
+  @Get('calendar')
+  getCalendar() {
+    return this.service.getCalendar();
+  }
+
   @Get('stats')
   getStats() {
     return this.service.getStats();

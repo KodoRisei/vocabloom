@@ -1,19 +1,26 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { vocabularyApi } from '../services/vocabulary.api';
+import { vocabularyApi, type VocabSortBy } from '../services/vocabulary.api';
 import { Button } from '../components/common/Button';
 import { Input } from '../components/common/Input';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 
+const SORT_OPTIONS: { value: VocabSortBy; label: string }[] = [
+  { value: 'createdAt', label: '登録日順' },
+  { value: 'priorityScore', label: '要復習順' },
+  { value: 'streak', label: 'ストリーク順' },
+];
+
 export function VocabularyListPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState<VocabSortBy>('createdAt');
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
-    queryKey: ['vocabularies', { search, page }],
-    queryFn: () => vocabularyApi.list({ search: search || undefined, page }),
+    queryKey: ['vocabularies', { search, page, sortBy }],
+    queryFn: () => vocabularyApi.list({ search: search || undefined, page, sortBy }),
   });
 
   const deleteMutation = useMutation({
@@ -33,12 +40,29 @@ export function VocabularyListPage() {
         </Link>
       </div>
 
-      <div className="mb-4">
-        <Input
-          placeholder="英語・日本語で検索..."
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-        />
+      <div className="flex gap-2 mb-4">
+        <div className="flex-1">
+          <Input
+            placeholder="英語・日本語で検索..."
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+          />
+        </div>
+        <div className="flex gap-1 shrink-0">
+          {SORT_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => { setSortBy(opt.value); setPage(1); }}
+              className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
+                sortBy === opt.value
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {isLoading ? (
@@ -63,9 +87,16 @@ export function VocabularyListPage() {
                   <p className="text-sm text-gray-500 truncate">{vocab.japaneseTranslation}</p>
                 </div>
                 {vocab.learningRecord && (
-                  <span className="shrink-0 text-xs text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
-                    streak: {vocab.learningRecord.streak}
-                  </span>
+                  <div className="shrink-0 flex gap-2 text-xs">
+                    {sortBy === 'priorityScore' && (
+                      <span className="text-orange-600 bg-orange-50 px-2 py-1 rounded-full">
+                        P: {Math.round(vocab.learningRecord.priorityScore)}
+                      </span>
+                    )}
+                    <span className="text-indigo-600 bg-indigo-50 px-2 py-1 rounded-full">
+                      streak: {vocab.learningRecord.streak}
+                    </span>
+                  </div>
                 )}
                 <div className="flex gap-2 shrink-0">
                   <Link to={`/vocabularies/${vocab.id}/edit`}>

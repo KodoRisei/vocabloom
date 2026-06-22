@@ -23,6 +23,25 @@ export class LearningRecordsService {
     return { data: record };
   }
 
+  async getCalendar(): Promise<{ data: Array<{ date: string; count: number }> }> {
+    const since = new Date();
+    since.setFullYear(since.getFullYear() - 1);
+
+    const rows = await this.prisma.$queryRaw<Array<{ date: string; count: bigint }>>`
+      SELECT DATE(answered_at AT TIME ZONE 'Asia/Tokyo')::text AS date,
+             COUNT(*)::bigint AS count
+      FROM quiz_session_items
+      WHERE answered_at IS NOT NULL
+        AND answered_at >= ${since}
+      GROUP BY DATE(answered_at AT TIME ZONE 'Asia/Tokyo')
+      ORDER BY date
+    `;
+
+    return {
+      data: rows.map((r) => ({ date: r.date, count: Number(r.count) })),
+    };
+  }
+
   async getStats() {
     const [total, learned, sessions] = await this.prisma.$transaction([
       this.prisma.vocabulary.count(),

@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { learningRecordApi } from '../services/learningRecord.api';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
+import { CalendarHeatmap } from '../components/common/CalendarHeatmap';
 
 export function HistoryPage() {
   const { data, isLoading } = useQuery({
@@ -8,12 +9,24 @@ export function HistoryPage() {
     queryFn: () => learningRecordApi.list(),
   });
 
+  const { data: calendarData } = useQuery({
+    queryKey: ['learning-records-calendar'],
+    queryFn: () => learningRecordApi.getCalendar(),
+  });
+
   const records = (data?.data as any[]) ?? [];
+  const calendarDays = calendarData?.data ?? [];
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-gray-900 mb-6">学習履歴</h1>
 
+      {/* Calendar */}
+      <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-6">
+        <CalendarHeatmap data={calendarDays} />
+      </div>
+
+      {/* Record list */}
       {isLoading ? (
         <LoadingSpinner />
       ) : records.length === 0 ? (

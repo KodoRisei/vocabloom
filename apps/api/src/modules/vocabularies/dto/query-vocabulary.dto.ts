@@ -1,5 +1,7 @@
-import { IsOptional, IsString, IsInt, Min, Max } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min, Max, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
+
+export type VocabSortBy = 'createdAt' | 'priorityScore' | 'streak';
 
 export class QueryVocabularyDto {
   @IsOptional()
@@ -18,4 +20,8 @@ export class QueryVocabularyDto {
   @Min(1)
   @Max(100)
   limit?: number = 20;
+
+  @IsOptional()
+  @IsIn(['createdAt', 'priorityScore', 'streak'])
+  sortBy?: VocabSortBy = 'createdAt';
 }

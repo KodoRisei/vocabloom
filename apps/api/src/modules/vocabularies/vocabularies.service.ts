@@ -9,7 +9,7 @@ export class VocabulariesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(query: QueryVocabularyDto) {
-    const { search, page = 1, limit = 20 } = query;
+    const { search, page = 1, limit = 20, sortBy = 'createdAt' } = query;
     const skip = (page - 1) * limit;
 
     const where = search
@@ -21,11 +21,18 @@ export class VocabulariesService {
         }
       : {};
 
+    const orderBy =
+      sortBy === 'priorityScore'
+        ? { learningRecord: { priorityScore: 'desc' as const } }
+        : sortBy === 'streak'
+        ? { learningRecord: { streak: 'desc' as const } }
+        : { createdAt: 'desc' as const };
+
     const [items, total] = await this.prisma.$transaction([
       this.prisma.vocabulary.findMany({
         where,
         include: { learningRecord: true },
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         skip,
         take: limit,
       }),
